@@ -1,4 +1,4 @@
-iCE40 E1 Core Memory Map
+Nitro E1 Core Memory Map
 ========================
 
 RX
