@@ -1,6 +1,6 @@
-CORE := e1
+CORE := no2e1
 
-RTL_SRCS_e1 = $(addprefix rtl/, \
+RTL_SRCS_no2e1 = $(addprefix rtl/, \
 	e1_crc4.v \
 	e1_rx_clock_recovery.v \
 	e1_rx_deframer.v \
@@ -17,7 +17,7 @@ RTL_SRCS_e1 = $(addprefix rtl/, \
 	hdb3_enc.v \
 )
 
-TESTBENCHES_e1 := \
+TESTBENCHES_no2e1 := \
 	e1_crc4_tb \
 	e1_tb \
 	e1_tx_framer_tb \
