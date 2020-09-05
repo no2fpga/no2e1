@@ -416,7 +416,7 @@ module e1_wb #(
 
 	// Auto E-bit tracking
 	always @(posedge clk)
-		tx_crc_e_auto <= (bdtx_done ? 2'b00 : tx_crc_e_auto) | (bdrx_done ? bdrx_crc_e : 2'b00);
+		tx_crc_e_auto <= (bdtx_done ? {2{rx_aligned}} : tx_crc_e_auto) & (bdrx_done ? bdrx_crc_e : 2'b11);
 
 	// BD FIFO interface
 	assign bdtx_mf    =  bti_do[MFW-1:0];

@@ -198,9 +198,9 @@ module e1_rx #(
 		// Track the CRC status of the two SMF
 	always @(posedge clk or posedge rst)
 		if (rst)
-			bd_crc_e <= 2'b00;
+			bd_crc_e <= 2'b11;
 		else
-			bd_crc_e <= (bd_done) ? 2'b00 : (bd_crc_e | {
+			bd_crc_e <= (bd_done) ? 2'b11 : (bd_crc_e & ~{
 				df_valid & df_err_crc &  df_frame[3],	// CRC error in second SMF
 				df_valid & df_err_crc & ~df_frame[3]	// CRC error in first SMF
 			});

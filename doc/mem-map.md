@@ -75,6 +75,9 @@ filled with a multiframe by the E1 core.
   * `c0` : CRC status for sub-multi-frame 0
   * `mf` : Multi-Frame address
 
+Note that just as is the case in the E1 data stream, the CRC
+status is `1` = CRC OK and `0` = CRC error.
+
 
 TX
 --
