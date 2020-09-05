@@ -13,9 +13,11 @@
 `default_nettype none
 
 module e1_wb #(
+	parameter integer LIU = 0,
 	parameter integer MFW = 7
 )(
 	// IO pads
+		// Raw PHY
 	input  wire pad_rx_hi_p,
 	input  wire pad_rx_hi_n,
 	input  wire pad_rx_lo_p,
@@ -23,6 +25,13 @@ module e1_wb #(
 
 	output wire pad_tx_hi,
 	output wire pad_tx_lo,
+
+		// LIU
+	input  wire pad_rx_data,
+	input  wire pad_rx_clk,
+
+	output wire pad_tx_data,
+	output wire pad_tx_clk,
 
 	// Buffer interface
 		// E1 RX (write)
@@ -330,12 +339,15 @@ module e1_wb #(
 
 	// RX core
 	e1_rx #(
+		.LIU(LIU),
 		.MFW(MFW)
 	) rx_I (
 		.pad_rx_hi_p(pad_rx_hi_p),
 		.pad_rx_hi_n(pad_rx_hi_n),
 		.pad_rx_lo_p(pad_rx_lo_p),
 		.pad_rx_lo_n(pad_rx_lo_n),
+		.pad_rx_data(pad_rx_data),
+		.pad_rd_clk(pad_rx_clk),
 		.buf_data(buf_rx_data),
 		.buf_ts(buf_rx_ts),
 		.buf_frame(buf_rx_frame),
@@ -384,10 +396,13 @@ module e1_wb #(
 
 	// TX core
 	e1_tx #(
+		.LIU(LIU),
 		.MFW(MFW)
 	) tx_I (
 		.pad_tx_hi(pad_tx_hi),
 		.pad_tx_lo(pad_tx_lo),
+		.pad_tx_data(pad_tx_data),
+		.pad_tx_clk(pad_tx_clk),
 		.buf_data(buf_tx_data),
 		.buf_ts(buf_tx_ts),
 		.buf_frame(buf_tx_frame),
