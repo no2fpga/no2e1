@@ -73,6 +73,9 @@ module e1_tx_framer (
 	wire [7:0] odd_bit0;
 
 	// Shift register
+	reg  [3:0] bit_cnt;
+	reg  bit_first;
+
 	reg  [7:0] shift_data;
 	reg  shift_at_first;
 	reg  shift_at_last;
@@ -179,9 +182,6 @@ module e1_tx_framer (
 
 	// Shift register
 	// --------------
-
-	reg [3:0] bit_cnt;
-	reg bit_first;
 
 	// Bit counter
 	always @(posedge clk or posedge rst)
