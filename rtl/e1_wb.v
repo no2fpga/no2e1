@@ -9,466 +9,251 @@
  * SPDX-License-Identifier: CERN-OHL-W-2.0
  */
 
-
 `default_nettype none
 
 module e1_wb #(
+	parameter integer N = 1,		// Number of units
+	parameter UNIT_HAS_RX = 1'b1,	// 1 bit per unit
+	parameter UNIT_HAS_TX = 1'b1,	// 1 bit per unit
 	parameter integer LIU = 0,
 	parameter integer MFW = 7
 )(
 	// IO pads
 		// Raw PHY
-	input  wire pad_rx_hi_p,
-	input  wire pad_rx_hi_n,
-	input  wire pad_rx_lo_p,
-	input  wire pad_rx_lo_n,
+	input  wire [N-1:0] pad_rx_hi_p,
+	input  wire [N-1:0] pad_rx_hi_n,
+	input  wire [N-1:0] pad_rx_lo_p,
+	input  wire [N-1:0] pad_rx_lo_n,
 
-	output wire pad_tx_hi,
-	output wire pad_tx_lo,
+	output wire [N-1:0] pad_tx_hi,
+	output wire [N-1:0] pad_tx_lo,
 
 		// LIU
-	input  wire pad_rx_data,
-	input  wire pad_rx_clk,
+	input  wire [N-1:0] pad_rx_data,
+	input  wire [N-1:0] pad_rx_clk,
 
-	output wire pad_tx_data,
-	output wire pad_tx_clk,
+	output wire [N-1:0] pad_tx_data,
+	output wire [N-1:0] pad_tx_clk,
 
 	// Buffer interface
 		// E1 RX (write)
-	output wire [7:0] buf_rx_data,
-	output wire [4:0] buf_rx_ts,
-	output wire [3:0] buf_rx_frame,
-	output wire [MFW-1:0] buf_rx_mf,
-	output wire buf_rx_we,
-	input  wire buf_rx_rdy,
+	output wire [(N*8)  -1:0] buf_rx_data,
+	output wire [(N*5)  -1:0] buf_rx_ts,
+	output wire [(N*4)  -1:0] buf_rx_frame,
+	output wire [(N*MFW)-1:0] buf_rx_mf,
+	output wire [ N     -1:0] buf_rx_we,
+	input  wire [ N     -1:0] buf_rx_rdy,
 
 		// E1 TX (read)
-	input  wire [7:0] buf_tx_data,
-	output wire [4:0] buf_tx_ts,
-	output wire [3:0] buf_tx_frame,
-	output wire [MFW-1:0] buf_tx_mf,
-	output wire buf_tx_re,
-	input  wire buf_tx_rdy,
+	input  wire [(N*8)  -1:0] buf_tx_data,
+	output wire [(N*5)  -1:0] buf_tx_ts,
+	output wire [(N*4)  -1:0] buf_tx_frame,
+	output wire [(N*MFW)-1:0] buf_tx_mf,
+	output wire [ N     -1:0] buf_tx_re,
+	input  wire [ N     -1:0] buf_tx_rdy,
 
 	// Wishbone slave
-	input  wire [ 3:0] bus_addr,
-	input  wire [15:0] bus_wdata,
-	output reg  [15:0] bus_rdata,
-	input  wire bus_cyc,
-	input  wire bus_we,
-	output wire bus_ack,
+	input  wire [ 7:0] wb_addr,
+	output reg  [15:0] wb_rdata,
+	input  wire [15:0] wb_wdata,
+	input  wire        wb_we,
+	input  wire        wb_cyc,
+	output reg         wb_ack,
 
 	// External strobes
-	output reg  irq,
-	output wire tick_tx,
-	output wire tick_rx,
+	output reg          irq,
+	output wire [N-1:0] tick_rx,
+	output wire [N-1:0] tick_tx,
 
 	// Common
 	input  wire clk,
 	input  wire rst
 );
 
+	// --------------------------------------------------------------------------
+	// Common part
+	// --------------------------------------------------------------------------
+
+	localparam integer MB = $clog2(2*N);
+
+
 	// Signals
 	// -------
 
-	// CSRs and bus access
-	wire bus_clr;
-	reg  bus_ack_i;
+	// Bus access
+	wire        bus_clr;
 
-	reg  crx_wren;
-	reg  crx_clear;
-	reg  ctx_wren;
-	reg  ctx_clear;
+	wire [ 0:0] bus_addr_lsb;
+	wire [15:0] bus_rdata_rx[0:N-1];
+	wire [15:0] bus_rdata_tx[0:N-1];
+	reg  [15:0] bus_rdata;
+	wire [15:0] bus_wdata;
+	wire        bus_we;
 
-	wire [15:0] bus_rd_rx_status;
-	wire [15:0] bus_rd_rx_bdout;
-	wire [15:0] bus_rd_tx_status;
-	wire [15:0] bus_rd_tx_bdout;
-
-	// FIFOs
-		// BD RX In
-	wire [MFW-1:0] bri_di;
-	wire [MFW-1:0] bri_do;
-	reg  bri_wren;
-	wire bri_rden;
-	wire bri_full;
-	wire bri_empty;
-
-		// BD RX Out
-	wire [MFW+1:0] bro_di;
-	wire [MFW+1:0] bro_do;
-	wire bro_wren;
-	reg  bro_rden;
-	wire bro_full;
-	wire bro_empty;
-
-		// BD TX In
-	wire [MFW+1:0] bti_di;
-	wire [MFW+1:0] bti_do;
-	reg  bti_wren;
-	wire bti_rden;
-	wire bti_full;
-	wire bti_empty;
-
-		// BD TX Out
-	wire [MFW-1:0] bto_di;
-	wire [MFW-1:0] bto_do;
-	wire bto_wren;
-	reg  bto_rden;
-	wire bto_full;
-	wire bto_empty;
-
-	// RX
-		// Control
-	reg  rx_rst;
-	reg  rx_enabled;
-	reg  [1:0] rx_mode;
-	wire rx_aligned;
-	reg  rx_overflow;
-
-		// BD interface
-	wire [MFW-1:0] bdrx_mf;
-	wire [1:0] bdrx_crc_e;
-	wire bdrx_valid;
-	wire bdrx_done;
-	wire bdrx_miss;
-
-	// Loopback path
-	wire lb_bit;
-	wire lb_valid;
-
-	// Timing
-	wire ext_tick;
-	wire int_tick;
-
-	// TX
-		// Control
-	reg  tx_rst;
-	reg  tx_enabled;
-	reg  [1:0] tx_mode;
-	reg  tx_time_src;
-	reg  tx_alarm;
-	reg  tx_loopback;
-	reg  tx_underflow;
-
-	reg  [1:0] tx_crc_e_auto;
-
-		// BD interface
-	wire [MFW-1:0] bdtx_mf;
-	wire [1:0] bdtx_crc_e;
-	wire bdtx_valid;
-	wire bdtx_done;
-	wire bdtx_miss;
+	// IRQs
+	wire [N-1:0] irq_rx;
+	wire [N-1:0] irq_tx;
 
 
-	// CSRs & FIFO bus access
-	// ----------------------
+	// Bus access
+	// ----------
 
 	// Ack is always 1 cycle after access
 	always @(posedge clk)
-		bus_ack_i <= bus_cyc & ~bus_ack_i;
+		wb_ack <= wb_cyc & ~wb_ack;
 
-	assign bus_ack = bus_ack_i;
-	assign bus_clr = ~bus_cyc | bus_ack_i;
+	assign bus_clr = ~wb_cyc | wb_ack;
 
-	// Control WrEn
-	always @(posedge clk)
-		if (bus_clr | ~bus_we) begin
-			crx_wren  <= 1'b0;
-			crx_clear <= 1'b0;
-			ctx_wren  <= 1'b0;
-			ctx_clear <= 1'b0;
-		end else begin
-			crx_wren  <= (bus_addr == 4'h0);
-			crx_clear <= (bus_addr == 4'h0) & bus_wdata[12];
-			ctx_wren  <= (bus_addr == 4'h4);
-			ctx_clear <= (bus_addr == 4'h4) & bus_wdata[12];
-		end
-
-	// Control regs
-	always @(posedge clk or posedge rst)
-		if (rst) begin
-			rx_mode     <= 2'b00;
-			rx_enabled  <= 1'b0;
-			tx_loopback <= 1'b0;
-			tx_alarm    <= 1'b0;
-			tx_time_src <= 1'b0;
-			tx_mode     <= 2'b00;
-			tx_enabled  <= 1'b0;
-		end else begin
-			if (crx_wren) begin
-				rx_mode     <= bus_wdata[2:1];
-				rx_enabled  <= bus_wdata[0];
-			end
-			if (ctx_wren) begin
-				tx_loopback <= bus_wdata[5];
-				tx_alarm    <= bus_wdata[4];
-				tx_time_src <= bus_wdata[3];
-				tx_mode     <= bus_wdata[2:1];
-				tx_enabled  <= bus_wdata[0];
-			end
-		end
-
-	// Status data
-	assign bus_rd_rx_status = {
-		3'b000,
-		rx_overflow,
-		bro_full,
-		bro_empty,
-		bri_full,
-		bri_empty,
-		6'b000000,
-		rx_aligned,
-		rx_enabled
-	};
-
-	assign bus_rd_tx_status = {
-		3'b000,
-		tx_underflow,
-		bto_full,
-		bto_empty,
-		bti_full,
-		bti_empty,
-		7'b0000000,
-		tx_enabled
-	};
-
-	// BD FIFO WrEn / RdEn
-		// (note we must mask on full/empty here to be consistent with what we
-		//  return in the data !)
-	always @(posedge clk)
-		if (bus_clr) begin
-			bri_wren <= 1'b0;
-			bti_wren <= 1'b0;
-			bro_rden <= 1'b0;
-			bto_rden <= 1'b0;
-		end else begin
-			bri_wren <=  bus_we & ~bri_full  & (bus_addr == 4'h2);
-			bti_wren <=  bus_we & ~bti_full  & (bus_addr == 4'h6);
-			bro_rden <= ~bus_we & ~bro_empty & (bus_addr == 4'h2);
-			bto_rden <= ~bus_we & ~bto_empty & (bus_addr == 4'h6);
-		end
-
-	// BD FIFO Data
-	assign bri_di = bus_wdata[MFW-1:0];
-	assign bti_di = { bus_wdata[14:13], bus_wdata[MFW-1:0] };
-
-	assign bus_rd_rx_bdout = { ~bro_empty, bro_do[MFW+1:MFW], {(13-MFW){1'b0}}, bro_do[MFW-1:0] };
-	assign bus_rd_tx_bdout = { ~bto_empty,                    {(15-MFW){1'b0}}, bto_do[MFW-1:0] };
+	// Direct map of some signals to custom local bus
+	assign bus_addr_lsb = wb_addr[0];
+	assign bus_wdata = wb_wdata;
+	assign bus_we = wb_we;
 
 	// Read MUX
+	always @(*)
+	begin : rdata_or
+		integer j;
+		bus_rdata = 0;
+		for (j=0; j<N; j=j+1)
+			bus_rdata = bus_rdata | bus_rdata_rx[j] | bus_rdata_tx[j];
+    end
+
 	always @(posedge clk)
 		if (bus_clr)
-			bus_rdata <= 16'h0000;
+			wb_rdata <= 16'h0000;
 		else
-			case (bus_addr[3:0])
-				4'h0:    bus_rdata <= bus_rd_rx_status;	// RX Status
-				4'h2:    bus_rdata <= bus_rd_rx_bdout;	// RX BD Out
-				4'h4:    bus_rdata <= bus_rd_tx_status;	// TX Status
-				4'h6:    bus_rdata <= bus_rd_tx_bdout;	// TX BD Out
-				default: bus_rdata <= 16'h0000;
-			endcase
+			wb_rdata <= bus_rdata;
 
 
-	// BD fifos
-	// --------
+	// --------------------------------------------------------------------------
+	// Per-unit part
+	// --------------------------------------------------------------------------
 
-	// BD RX In
-	fifo_sync_shift #(
-		.DEPTH(4),
-		.WIDTH(MFW)
-	) bd_rx_in_I (
-		.wr_data(bri_di),
-		.wr_ena(bri_wren),
-		.wr_full(bri_full),
-		.rd_data(bri_do),
-		.rd_ena(bri_rden),
-		.rd_empty(bri_empty),
-		.clk(clk),
-		.rst(rst)
-	);
+	genvar i;
 
-	// BD RX Out
-	fifo_sync_shift #(
-		.DEPTH(4),
-		.WIDTH(MFW+2)
-	) bd_rx_out_I (
-		.wr_data(bro_di),
-		.wr_ena(bro_wren),
-		.wr_full(bro_full),
-		.rd_data(bro_do),
-		.rd_ena(bro_rden),
-		.rd_empty(bro_empty),
-		.clk(clk),
-		.rst(rst)
-	);
+	generate
+		for (i=0; i<N; i=i+1)
+		begin
+			// Signals
+			// -------
 
-	// BD TX In
-	fifo_sync_shift #(
-		.DEPTH(4),
-		.WIDTH(MFW+2)
-	) bd_tx_in_I (
-		.wr_data(bti_di),
-		.wr_ena(bti_wren),
-		.wr_full(bti_full),
-		.rd_data(bti_do),
-		.rd_ena(bti_rden),
-		.rd_empty(bti_empty),
-		.clk(clk),
-		.rst(rst)
-	);
+			// Address pre-match
+			(* keep *) wire bus_addr_sel_rx;
+			(* keep *) wire bus_addr_sel_tx;
 
-	// BD TX Out
-	fifo_sync_shift #(
-		.DEPTH(4),
-		.WIDTH(MFW)
-	) bd_tx_out_I (
-		.wr_data(bto_di),
-		.wr_ena(bto_wren),
-		.wr_full(bto_full),
-		.rd_data(bto_do),
-		.rd_ena(bto_rden),
-		.rd_empty(bto_empty),
-		.clk(clk),
-		.rst(rst)
-	);
+			assign bus_addr_sel_rx = (wb_addr[MB:1] == (2*i+0));
+			assign bus_addr_sel_tx = (wb_addr[MB:1] == (2*i+1));
+
+			// Cross status
+			wire [1:0] tx_crc_e_auto;
+			wire       tx_crc_e_ack;
+
+			// Loopback path
+			wire lb_bit;
+			wire lb_valid;
 
 
-	// RX submodule
-	// ------------
+			// RX
+			// --
 
-	// RX core
-	e1_rx #(
-		.LIU(LIU),
-		.MFW(MFW)
-	) rx_I (
-		.pad_rx_hi_p(pad_rx_hi_p),
-		.pad_rx_hi_n(pad_rx_hi_n),
-		.pad_rx_lo_p(pad_rx_lo_p),
-		.pad_rx_lo_n(pad_rx_lo_n),
-		.pad_rx_data(pad_rx_data),
-		.pad_rd_clk(pad_rx_clk),
-		.buf_data(buf_rx_data),
-		.buf_ts(buf_rx_ts),
-		.buf_frame(buf_rx_frame),
-		.buf_mf(buf_rx_mf),
-		.buf_we(buf_rx_we),
-		.buf_rdy(buf_rx_rdy),
-		.bd_mf(bdrx_mf),
-		.bd_crc_e(bdrx_crc_e),
-		.bd_valid(bdrx_valid),
-		.bd_done(bdrx_done),
-		.bd_miss(bdrx_miss),
-		.lb_bit(lb_bit),
-		.lb_valid(lb_valid),
-		.status_aligned(rx_aligned),
-		.clk(clk),
-		.rst(rx_rst)
-	);
+			if (UNIT_HAS_RX[i]) begin
 
-	// BD FIFO interface
-	assign bdrx_mf    =  bri_do;
-	assign bdrx_valid = ~bri_empty;
+				// Sub-Instance
+				e1_wb_rx #(
+					.LIU(LIU),
+					.MFW(MFW)
+				) srx_I (
+					.pad_rx_hi_p  (pad_rx_hi_p[i]),
+					.pad_rx_hi_n  (pad_rx_hi_n[i]),
+					.pad_rx_lo_p  (pad_rx_lo_p[i]),
+					.pad_rx_lo_n  (pad_rx_lo_n[i]),
+					.pad_rx_data  (pad_rx_data[i]),
+					.pad_rx_clk   (pad_rx_clk[i]),
+					.buf_rx_data  (buf_rx_data [i*8+:8]),
+					.buf_rx_ts    (buf_rx_ts   [i*5+:5]),
+					.buf_rx_frame (buf_rx_frame[i*4+:4]),
+					.buf_rx_mf    (buf_rx_mf   [i*MFW+:MFW]),
+					.buf_rx_we    (buf_rx_we   [i]),
+					.buf_rx_rdy   (buf_rx_rdy  [i]),
+					.bus_addr_sel (bus_addr_sel_rx),
+					.bus_addr_lsb (bus_addr_lsb),
+					.bus_wdata    (bus_wdata),
+					.bus_rdata    (bus_rdata_rx[i]),
+					.bus_clr      (bus_clr),
+					.bus_we       (bus_we),
+					.tx_crc_e_auto(tx_crc_e_auto),
+					.tx_crc_e_ack (tx_crc_e_ack),
+					.irq          (irq_rx[i]),
+					.tick         (tick_rx[i]),
+					.lb_bit       (lb_bit),
+					.lb_valid     (lb_valid),
+					.clk          (clk),
+					.rst          (rst)
+				);
 
-	assign bri_rden = bdrx_done;
+			end else begin
 
-	assign bro_di   = { bdrx_crc_e, bdrx_mf };
-	assign bro_wren = ~bro_full & bdrx_done;
+				// Dummy
+				assign lb_bit   = 1'b0;
+				assign lb_valid = 1'b0;
 
-	// Control logic
-		// Local reset
-	always @(posedge clk or posedge rst)
-		if (rst)
-			rx_rst <= 1'b1;
-		else
-			rx_rst <= ~rx_enabled;
+				assign bus_rdata_rx[i] = 16'h0000;
 
-		// Overflow
-	always @(posedge clk or posedge rst)
-		if (rst)
-			rx_overflow <= 1'b0;
-		else
-			rx_overflow <= (rx_overflow & ~crx_clear) | bdrx_miss;
+				assign tx_crc_e_auto = 2'b00;
+
+				assign irq_rx[i] = 1'b0;
+				assign tick_rx[i] = 1'b0;
+
+			end
 
 
-	// TX submodule
-	// ------------
+			// TX
+			// --
 
-	// TX core
-	e1_tx #(
-		.LIU(LIU),
-		.MFW(MFW)
-	) tx_I (
-		.pad_tx_hi(pad_tx_hi),
-		.pad_tx_lo(pad_tx_lo),
-		.pad_tx_data(pad_tx_data),
-		.pad_tx_clk(pad_tx_clk),
-		.buf_data(buf_tx_data),
-		.buf_ts(buf_tx_ts),
-		.buf_frame(buf_tx_frame),
-		.buf_mf(buf_tx_mf),
-		.buf_re(buf_tx_re),
-		.buf_rdy(buf_tx_rdy),
-		.bd_mf(bdtx_mf),
-		.bd_crc_e(bdtx_crc_e),
-		.bd_valid(bdtx_valid),
-		.bd_done(bdtx_done),
-		.bd_miss(bdtx_miss),
-		.lb_bit(lb_bit),
-		.lb_valid(lb_valid),
-		.ext_tick(ext_tick),
-		.int_tick(int_tick),
-		.ctrl_time_src(tx_time_src),
-		.ctrl_do_framing(tx_mode != 2'b00),
-		.ctrl_do_crc4(tx_mode[1]),
-		.ctrl_loopback(tx_loopback),
-		.alarm(tx_alarm),
-		.clk(clk),
-		.rst(tx_rst)
-	);
+			if (UNIT_HAS_TX[i]) begin
 
-	assign ext_tick = lb_valid;
+				// Sub-Instance
+				e1_wb_tx #(
+					.LIU(LIU),
+					.MFW(MFW)
+				) stx_I (
+					.pad_tx_hi    (pad_tx_hi[i]),
+					.pad_tx_lo    (pad_tx_lo[i]),
+					.pad_tx_data  (pad_tx_data[i]),
+					.pad_tx_clk   (pad_tx_clk[i]),
+					.buf_tx_data  (buf_tx_data [i*8+:8]),
+					.buf_tx_ts    (buf_tx_ts   [i*5+:5]),
+					.buf_tx_frame (buf_tx_frame[i*4+:4]),
+					.buf_tx_mf    (buf_tx_mf   [i*MFW+:MFW]),
+					.buf_tx_re    (buf_tx_re   [i]),
+					.buf_tx_rdy   (buf_tx_rdy  [i]),
+					.bus_addr_sel (bus_addr_sel_tx),
+					.bus_addr_lsb (bus_addr_lsb),
+					.bus_wdata    (bus_wdata),
+					.bus_rdata    (bus_rdata_tx[i]),
+					.bus_clr      (bus_clr),
+					.bus_we       (bus_we),
+					.tx_crc_e_auto(tx_crc_e_auto),
+					.tx_crc_e_ack (tx_crc_e_ack),
+					.irq          (irq_tx[i]),
+					.tick         (tick_tx[i]),
+					.lb_bit       (lb_bit),
+					.lb_valid     (lb_valid),
+					.clk          (clk),
+					.rst          (rst)
+				);
 
-	// Auto E-bit tracking
-	always @(posedge clk)
-		tx_crc_e_auto <= (bdtx_done ? {2{rx_aligned}} : tx_crc_e_auto) & (bdrx_done ? bdrx_crc_e : 2'b11);
+			end else begin
 
-	// BD FIFO interface
-	assign bdtx_mf    =  bti_do[MFW-1:0];
-	assign bdtx_crc_e = (tx_mode == 2'b11) ? tx_crc_e_auto : bti_do[MFW+1:MFW];
-	assign bdtx_valid = ~bti_empty;
+				// Dummy
+				assign bus_rdata_tx[i] = 16'h0000;
+				assign irq_tx[i] = 1'b0;
 
-	assign bti_rden = bdtx_done;
+				assign tick_tx[i] = 1'b0;
 
-	assign bto_di   =  bdtx_mf;
-	assign bto_wren = ~bto_full & bdtx_done;
+			end
 
-	// Control logic
-		// Local reset
-	always @(posedge clk or posedge rst)
-		if (rst)
-			tx_rst <= 1'b1;
-		else
-			tx_rst <= ~tx_enabled;
-
-		// Underflow
-	always @(posedge clk or posedge rst)
-		if (rst)
-			tx_underflow <= 1'b0;
-		else
-			tx_underflow <= (tx_underflow & ~ctx_clear) | bdtx_miss;
-
-
-	// External strobes
-	// ----------------
-
-	always @(posedge clk or posedge rst)
-		if (rst)
-			irq <= 1'b0;
-		else
-			irq <= ~bro_empty | rx_overflow | ~bto_empty | tx_underflow;
-
-	assign tick_tx = int_tick;	/* tick used for TX */
-	assign tick_rx = ext_tick;	/* tick recovered from RX */
+		end
+	endgenerate
 
 endmodule // e1_wb

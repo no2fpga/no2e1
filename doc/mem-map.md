@@ -4,7 +4,7 @@ Nitro E1 Core Memory Map
 RX
 --
 
-### RX Control (Write Only, addr `0x00`)
+### RX Control (Write Only, addr `(N*4) + 0`)
 
 ```
 ,---------------------------------------------------------------,
@@ -23,7 +23,7 @@ RX
   * `e`: Enable
 
 
-### RX Status (Read Only, addr `0x00`)
+### RX Status (Read Only, addr `(N*4) + 0`)
 
 ```
 ,---------------------------------------------------------------,
@@ -41,7 +41,7 @@ RX
   * `e`  : Enabled
 
 
-### RX BD Write (Write Only, addr `0x02`)
+### RX BD Submit (Write Only, addr `(N*4) + 1`)
 
 Writes to this location push a buffer descriptor to be filled
 with a multiframe by the E1 core.
@@ -57,7 +57,7 @@ with a multiframe by the E1 core.
   * `mf` : Multi-Frame address
 
 
-### RX BD Read
+### RX BD Status (Read Only, addr `(N*4) + 1`)
 
 Read from the location retrieve a buffer descriptor that has been
 filled with a multiframe by the E1 core.
@@ -82,7 +82,7 @@ status is `1` = CRC OK and `0` = CRC error.
 TX
 --
 
-### TX Control (Write Only, addr `0x04`)
+### TX Control (Write Only, addr `(N*4) + 2`)
 
 ```
 ,---------------------------------------------------------------,
@@ -104,7 +104,7 @@ TX
   * `e` : Enable
 
 
-### TX Status (Read Only, addr `0x04`)
+### TX Status (Read Only, addr `(N*4) + 2`)
 
 ```
 ,---------------------------------------------------------------,
@@ -122,7 +122,7 @@ TX
   * `e`  : Enabled
 
 
-### TX BD Write (Write Only, addr `0x06`)
+### TX BD Submit (Write Only, addr `(N*4) + 3`)
 
 Writes to this location push a buffer descriptor to be filled
 with a multiframe by the E1 core.
@@ -140,7 +140,7 @@ with a multiframe by the E1 core.
   * `mf` : Multi-Frame address
 
 
-### TX BD Read (Read Only, addr `0x06`)
+### TX BD Status (Read Only, addr `(N*4) + 3`)
 
 Read from the location retrieve a buffer descriptor that has been
 filled with a multiframe by the E1 core.
@@ -156,3 +156,11 @@ filled with a multiframe by the E1 core.
   * `v`  : Valid
   * `mf` : Multi-Frame address
 
+
+Notes
+-----
+
+* The register description above assumed `MFW` was set to `7` when
+  instanciating the core. If the value is different, this will be
+  reflected in the various width of the `mf` fields in the Buffer
+  Descriptors words.

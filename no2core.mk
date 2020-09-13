@@ -12,6 +12,8 @@ RTL_SRCS_no2e1 = $(addprefix rtl/, \
 	e1_tx_phy.v \
 	e1_tx_liu.v \
 	e1_tx.v \
+	e1_wb_rx.v \
+	e1_wb_tx.v \
 	e1_wb.v \
 	hdb3_dec.v \
 	hdb3_enc.v \
