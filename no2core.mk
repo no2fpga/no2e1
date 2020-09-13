@@ -12,6 +12,7 @@ RTL_SRCS_no2e1 = $(addprefix rtl/, \
 	e1_tx_phy.v \
 	e1_tx_liu.v \
 	e1_tx.v \
+	e1_buf_if_wb.v \
 	e1_wb_rx.v \
 	e1_wb_tx.v \
 	e1_wb.v \
@@ -20,6 +21,7 @@ RTL_SRCS_no2e1 = $(addprefix rtl/, \
 )
 
 TESTBENCHES_no2e1 := \
+	e1_buf_if_wb_tb \
 	e1_crc4_tb \
 	e1_tb \
 	e1_tx_framer_tb \
