@@ -50,7 +50,7 @@ module e1_tx_framer (
 	// -------
 
 	// Tick source
-	reg  [5:0] tick_cnt;
+	reg  [4:0] tick_cnt;
 	reg  strobe;
 
 	// Fetch unit
