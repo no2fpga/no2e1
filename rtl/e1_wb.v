@@ -90,6 +90,10 @@ module e1_wb #(
 	wire [15:0] bus_wdata;
 	wire        bus_we;
 
+	// Loopback paths
+	wire [N-1:0] lb_bit;
+	wire [N-1:0] lb_valid;
+
 	// IRQs
 	wire [N-1:0] irq_rx;
 	wire [N-1:0] irq_tx;
@@ -149,8 +153,8 @@ module e1_wb #(
 			wire       tx_crc_e_ack;
 
 			// Loopback path
-			wire lb_bit;
-			wire lb_valid;
+			wire lb_bit_cross;
+			wire lb_valid_cross;
 
 
 			// RX
@@ -185,8 +189,8 @@ module e1_wb #(
 					.tx_crc_e_ack (tx_crc_e_ack),
 					.irq          (irq_rx[i]),
 					.tick         (tick_rx[i]),
-					.lb_bit       (lb_bit),
-					.lb_valid     (lb_valid),
+					.lb_bit       (lb_bit[i]),
+					.lb_valid     (lb_valid[i]),
 					.clk          (clk),
 					.rst          (rst)
 				);
@@ -194,8 +198,8 @@ module e1_wb #(
 			end else begin
 
 				// Dummy
-				assign lb_bit   = 1'b0;
-				assign lb_valid = 1'b0;
+				assign lb_bit[i]   = 1'b0;
+				assign lb_valid[i] = 1'b0;
 
 				assign bus_rdata_rx[i] = 16'h0000;
 
@@ -237,11 +241,20 @@ module e1_wb #(
 					.tx_crc_e_ack (tx_crc_e_ack),
 					.irq          (irq_tx[i]),
 					.tick         (tick_tx[i]),
-					.lb_bit       (lb_bit),
-					.lb_valid     (lb_valid),
+					.lb_bit       ({lb_bit_cross,   lb_bit[i]  }),
+					.lb_valid     ({lb_valid_cross, lb_valid[i]}),
 					.clk          (clk),
 					.rst          (rst)
 				);
+
+				// Loopback cross-path
+				if (((i^1) < N) && UNIT_HAS_RX[i^1]) begin
+					assign lb_bit_cross   = lb_bit[i^1];
+					assign lb_valid_cross = lb_valid[i^1];
+				end else begin
+					assign lb_bit_cross   = 1'b0;
+					assign lb_valid_cross = 1'b0;
+				end
 
 			end else begin
 

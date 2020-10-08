@@ -89,11 +89,12 @@ TX
 ,---------------------------------------------------------------,
 | f | e | d | c | b | a | 9 | 8 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
 |---------------------------------------------------------------|
-|     /     | uc|           /           | l | a | t |  mode | e |
+|     /     | uc|           /       | ls| l | a | t |  mode | e |
 '---------------------------------------------------------------'
 ```
 
   * `uc`: Underflow Clear
+  * 'ls': Loopback Select (0=Local, 1=Cross)
   * `l` : Loopback
   * `a` : Alarm (sets Alarm bit on transmitted frames)
   * `t` : Timing source (0=internal, 1=lock to RX)

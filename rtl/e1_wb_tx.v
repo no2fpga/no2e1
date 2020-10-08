@@ -49,8 +49,8 @@ module e1_wb_tx #(
 	output wire tick,
 
 	// Loopback path
-	input  wire lb_bit,
-	input  wire lb_valid,
+	input  wire [1:0] lb_bit,
+	input  wire [1:0] lb_valid,
 
 	// Common
 	input  wire clk,
@@ -90,7 +90,7 @@ module e1_wb_tx #(
 	reg  [1:0] tx_mode;
 	reg  tx_time_src;
 	reg  tx_alarm;
-	reg  tx_loopback;
+	reg  [1:0] tx_loopback;
 	reg  tx_underflow;
 
 	// BD interface
@@ -121,13 +121,13 @@ module e1_wb_tx #(
 	// Control regs
 	always @(posedge clk or posedge rst)
 		if (rst) begin
-			tx_loopback <= 1'b0;
+			tx_loopback <= 2'b00;
 			tx_alarm    <= 1'b0;
 			tx_time_src <= 1'b0;
 			tx_mode     <= 2'b00;
 			tx_enabled  <= 1'b0;
 		end else if (ctx_wren) begin
-			tx_loopback <= bus_wdata[5];
+			tx_loopback <= bus_wdata[6:5];
 			tx_alarm    <= bus_wdata[4];
 			tx_time_src <= bus_wdata[3];
 			tx_mode     <= bus_wdata[2:1];
@@ -225,14 +225,14 @@ module e1_wb_tx #(
 		.bd_valid(bdtx_valid),
 		.bd_done(bdtx_done),
 		.bd_miss(bdtx_miss),
-		.lb_bit(lb_bit),
-		.lb_valid(lb_valid),
+		.lb_bit(lb_bit[tx_loopback[1]]),
+		.lb_valid(lb_valid[tx_loopback[1]]),
 		.ext_tick(ext_tick),
 		.int_tick(int_tick),
 		.ctrl_time_src(tx_time_src),
 		.ctrl_do_framing(tx_mode != 2'b00),
 		.ctrl_do_crc4(tx_mode[1]),
-		.ctrl_loopback(tx_loopback),
+		.ctrl_loopback(tx_loopback[0]),
 		.alarm(tx_alarm),
 		.clk(clk),
 		.rst(tx_rst)
