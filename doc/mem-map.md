@@ -38,6 +38,7 @@ RX
   * `boe`: BD Out Empty
   * `bif`: BD In Full
   * `bie`: BD In Empty
+  * 'a'  : Aligned
   * `e`  : Enabled
 
 
