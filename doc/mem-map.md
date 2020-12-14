@@ -17,9 +17,9 @@ RX
   * `oc`: Overflow Clear
   * `mode`:
       - `00`: Transparent; no alignment at all
-      - `01`: Byte Alignement
-      - `10`: Basic Frame Alignement; align to the 32-byte basic frame
-      - `11`: Multi Frame Alignement; align to the multi-frame
+      - `01`: Byte Alignment
+      - `10`: Basic Frame Alignment; align to the 32-byte basic frame
+      - `11`: Multi Frame Alignment; align to the multi-frame
   * `e`: Enable the receiver
 
 Here, _alignment_ is defined in terms of the alignment of the
@@ -66,7 +66,7 @@ with a multiframe by the E1 core.
 
 ### RX BD Status (Read Only, addr `(N*4) + 1`)
 
-Read from the location retrieve a buffer descriptor that has been
+Reads from the location retrieve a buffer descriptor that has been
 filled with a multiframe by the E1 core.
 
 ```
@@ -136,7 +136,7 @@ TX
 '---------------------------------------------------------------'
 ```
 
-  * `u`  : Undeflow (a multi frame was missed)
+  * `u`  : Underflow (a multi frame was missed)
   * `bof`: BD Out Full
   * `boe`: BD Out Empty
   * `bif`: BD In Full
@@ -183,6 +183,6 @@ Notes
 -----
 
 * The register description above assumed `MFW` was set to `7` when
-  instanciating the core. If the value is different, this will be
+  instantiating the core. If the value is different, this will be
   reflected in the various width of the `mf` fields in the Buffer
   Descriptors words.
