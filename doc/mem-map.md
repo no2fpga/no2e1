@@ -16,12 +16,18 @@ RX
 
   * `oc`: Overflow Clear
   * `mode`:
-      - `00`: Transparent
+      - `00`: Transparent; no alignment at all
       - `01`: Byte Alignement
-      - `10`: Basic Frame Alignement
-      - `11`: Multi Frame Alignement
-  * `e`: Enable
+      - `10`: Basic Frame Alignement; align to the 32-byte basic frame
+      - `11`: Multi Frame Alignement; align to the multi-frame
+  * `e`: Enable the receiver
 
+Here, _alignment_ is defined in terms of the alignment of the
+incoming E1 bitstream versus the start of the receive buffer. In
+transparent mode, there is an arbitrary byte + bit offset between
+incoming data and the buffer start. In Multi Frame Alignment mode,
+the first byte of the buffer is the TS0 byte of the first frame
+in a multiframe.
 
 ### RX Status (Read Only, addr `(N*4) + 0`)
 
@@ -38,8 +44,8 @@ RX
   * `boe`: BD Out Empty
   * `bif`: BD In Full
   * `bie`: BD In Empty
-  * 'a'  : Aligned
-  * `e`  : Enabled
+  * 'a'  : Aligned; configured alignment has been obtained
+  * `e`  : Receiver is enabled
 
 
 ### RX BD Submit (Write Only, addr `(N*4) + 1`)
@@ -94,16 +100,30 @@ TX
 ```
 
   * `uc`: Underflow Clear
-  * 'ls': Loopback Select (0=Local, 1=Cross)
-  * `l` : Loopback
+  * 'ls': Loopback Select (0=Local, 1=Cross)\
+    If `l` is enabled, this bit selects the source of the external
+    loop-back data: `0` means data received on the very same port;
+    `1` means data received on the _other_ port.
+  * `l` : External Loopback\
+    If enabled, transmitter loops back whatever data was received
+    by the receiver of the port selected by `ls`
   * `a` : Alarm (sets Alarm bit on transmitted frames)
   * `t` : Timing source (0=internal, 1=lock to RX)
   * `mode`:
-      - `00`: Transparent
-      - `01`: TS0 framing, no CRC4
-      - `10`: TS0 framing, CRC4
-      - `11`: TS0 framing, CRC4 + Auto "E" bits
-  * `e` : Enable
+      - `00`: Transparent\
+	The Framer does not preform any modification/insertion of bits
+	into TS0 and just transparently transmits the data as-is
+      - `01`: TS0 framing, no CRC4\
+	The framer generates framing patterns on TS0 but does not
+	generate the CRC4 in the C-bits
+      - `10`: TS0 framing, CRC4\
+	The framer generates framing patterns on TS0, computes CRC4
+	and populates the C-bits with it
+      - `11`: TS0 framing, CRC4 + Auto "E" bits\
+	The framer generates framing patterns on TS0, computes CRC4,
+	popualtes the C-bits with it and automatically reports
+	receive-side CRC4 errors in the E-bits
+  * `e` : Enable the transmitter
 
 
 ### TX Status (Read Only, addr `(N*4) + 2`)
@@ -121,7 +141,7 @@ TX
   * `boe`: BD Out Empty
   * `bif`: BD In Full
   * `bie`: BD In Empty
-  * `e`  : Enabled
+  * `e`  : Transmitter is enabled
 
 
 ### TX BD Submit (Write Only, addr `(N*4) + 3`)
@@ -137,8 +157,8 @@ with a multiframe by the E1 core.
 '---------------------------------------------------------------'
 ```
 
-  * `c1` : CRC 'E' bit for sub-multi-frame 1
-  * `c0` : CRC 'E' bit for sub-multi-frame 0
+  * `c1` : CRC 'E' bit for sub-multi-frame 1 (only used if tx_mode != `11`)
+  * `c0` : CRC 'E' bit for sub-multi-frame 0 (only used if tx_mode != `11`)
   * `mf` : Multi-Frame address
 
 
