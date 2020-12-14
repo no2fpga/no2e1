@@ -100,7 +100,7 @@ TX
 ```
 
   * `uc`: Underflow Clear
-  * 'ls': Loopback Select (0=Local, 1=Cross)\
+  * `ls`: Loopback Select (0=Local, 1=Cross)\
     If `l` is enabled, this bit selects the source of the external
     loop-back data: `0` means data received on the very same port;
     `1` means data received on the _other_ port.
