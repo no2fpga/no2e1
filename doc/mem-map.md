@@ -146,8 +146,8 @@ TX
 
 ### TX BD Submit (Write Only, addr `(N*4) + 3`)
 
-Writes to this location push a buffer descriptor to be filled
-with a multiframe by the E1 core.
+Writes to this location push a buffer descriptor of a multiframe
+to be transmitted by the E1 core.
 
 ```
 ,---------------------------------------------------------------,
@@ -164,8 +164,8 @@ with a multiframe by the E1 core.
 
 ### TX BD Status (Read Only, addr `(N*4) + 3`)
 
-Read from the location retrieve a buffer descriptor that has been
-filled with a multiframe by the E1 core.
+Reads from the location retrieve a buffer descriptor of a multiframe
+that has been transmitted by the E1 core.
 
 ```
 ,---------------------------------------------------------------,
