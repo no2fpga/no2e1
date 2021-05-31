@@ -238,7 +238,7 @@ module e1_wb_tx #(
 		.rst(tx_rst)
 	);
 
-	assign ext_tick = lb_valid;
+	assign ext_tick = lb_valid[0];
 
 	// Auto E-bit tracking
 	assign tx_crc_e_ack = bdtx_done;
