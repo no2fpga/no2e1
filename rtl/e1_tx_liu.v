@@ -58,7 +58,6 @@ module e1_tx_liu (
 		.NEG_TRIGGER(1'b0)
 	) tx_data_iob_I (
 		.PACKAGE_PIN(pad_tx_data),
-		.LATCH_INPUT_VALUE(1'b0),
 		.CLOCK_ENABLE(1'b1),
 		.INPUT_CLK(1'b0),
 		.OUTPUT_CLK(clk),
@@ -75,7 +74,6 @@ module e1_tx_liu (
 		.NEG_TRIGGER(1'b0)
 	) tx_clk_iob_I (
 		.PACKAGE_PIN(pad_tx_clk),
-		.LATCH_INPUT_VALUE(1'b0),
 		.CLOCK_ENABLE(1'b1),
 		.INPUT_CLK(1'b0),
 		.OUTPUT_CLK(clk),

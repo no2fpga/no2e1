@@ -34,7 +34,6 @@ module e1_rx_phy (
         .IO_STANDARD("SB_LVDS_INPUT")
     ) rx_hi_I (
         .PACKAGE_PIN(pad_rx_hi_p),
-        .LATCH_INPUT_VALUE(1'b0),
         .CLOCK_ENABLE(1'b1),
         .INPUT_CLK(clk),
         .OUTPUT_CLK(1'b0),
@@ -52,7 +51,6 @@ module e1_rx_phy (
         .IO_STANDARD("SB_LVDS_INPUT")
     ) rx_lo_I (
         .PACKAGE_PIN(pad_rx_lo_p),
-        .LATCH_INPUT_VALUE(1'b0),
         .CLOCK_ENABLE(1'b1),
         .INPUT_CLK(clk),
         .OUTPUT_CLK(1'b0),

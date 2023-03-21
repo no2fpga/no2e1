@@ -32,7 +32,6 @@ module e1_tx_phy (
         .IO_STANDARD("SB_LVCMOS")
     ) tx_hi_I (
         .PACKAGE_PIN(pad_tx_hi),
-        .LATCH_INPUT_VALUE(1'b0),
         .CLOCK_ENABLE(1'b1),
         .INPUT_CLK(1'b0),
         .OUTPUT_CLK(clk),
@@ -50,7 +49,6 @@ module e1_tx_phy (
         .IO_STANDARD("SB_LVCMOS")
     ) tx_lo_I (
         .PACKAGE_PIN(pad_tx_lo),
-        .LATCH_INPUT_VALUE(1'b0),
         .CLOCK_ENABLE(1'b1),
         .INPUT_CLK(1'b0),
         .OUTPUT_CLK(clk),

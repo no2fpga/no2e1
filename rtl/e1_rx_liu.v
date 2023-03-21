@@ -38,7 +38,6 @@ module e1_rx_liu (
 		.NEG_TRIGGER(1'b0)
 	) rx_iobs_I[1:0] (
 		.PACKAGE_PIN({pad_rx_data, pad_rx_clk}),
-		.LATCH_INPUT_VALUE(1'b0),
 		.CLOCK_ENABLE(1'b1),
 		.INPUT_CLK(clk),
 		.OUTPUT_CLK(1'b0),
