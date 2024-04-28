@@ -18,8 +18,8 @@ RX
   * `mode`:
       - `00`: Transparent; no alignment at all
       - `01`: Byte Alignment
-      - `10`: Basic Frame Alignment; align to the 32-byte basic frame
-      - `11`: Multi Frame Alignment; align to the multi-frame
+      - `10`: Basic Frame Alignment; align to the 32-byte basic frame (No CRC4)
+      - `11`: Multi Frame Alignment; align to the CRC4 multi-frame
   * `e`: Enable the receiver
 
 Here, _alignment_ is defined in terms of the alignment of the
@@ -114,14 +114,13 @@ TX
 	The Framer does not preform any modification/insertion of bits
 	into TS0 and just transparently transmits the data as-is
       - `01`: TS0 framing, no CRC4\
-	The framer generates framing patterns on TS0 but does not
-	generate the CRC4 in the C-bits
+	The framer generates FAS but not the Si bits (bit 1)
       - `10`: TS0 framing, CRC4\
 	The framer generates framing patterns on TS0, computes CRC4
 	and populates the C-bits with it
       - `11`: TS0 framing, CRC4 + Auto "E" bits\
 	The framer generates framing patterns on TS0, computes CRC4,
-	popualtes the C-bits with it and automatically reports
+	populates the C-bits with it and automatically reports
 	receive-side CRC4 errors in the E-bits
   * `e` : Enable the transmitter
 
