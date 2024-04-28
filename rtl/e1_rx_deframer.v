@@ -34,6 +34,9 @@ module e1_rx_deframer #(
 
 	output reg  aligned,
 
+	// Control
+	input  wire ctrl_mode_mf,
+
 	// Common
 	input  wire clk,
 	input  wire rst
@@ -162,7 +165,9 @@ module e1_rx_deframer #(
 				// frame search
 				if (bit_last & ts_is_ts0)
 					if (fas_pos)
-						fsm_state_nxt <= data_match_fas ? ST_MULTIFRAME_SEARCH : ST_FRAME_SEARCH;
+						fsm_state_nxt <= data_match_fas ? (
+								ctrl_mode_mf ? ST_MULTIFRAME_SEARCH : ST_ALIGNED
+							) : ST_FRAME_SEARCH;
 					else
 						fsm_state_nxt <= data[6] ? ST_FRAME_VALIDATE : ST_FRAME_SEARCH;
 			end
@@ -240,7 +245,7 @@ module e1_rx_deframer #(
 
 	// Control for alignement
 	assign align_frame  = (fsm_state == ST_FRAME_SEARCH);
-	assign align_mframe = (fsm_state == ST_MULTIFRAME_SEARCH);
+	assign align_mframe = (fsm_state == ST_FRAME_VALIDATE) || (fsm_state == ST_MULTIFRAME_SEARCH);
 
 
 	// Helpers
@@ -324,7 +329,7 @@ module e1_rx_deframer #(
 	always @(posedge clk)
 		// CRC and MultiFrameAlign errors tracked only when properly
 		// aligned to the multiframe
-		if (fsm_state != ST_ALIGNED) begin
+		if ((fsm_state != ST_ALIGNED) | ~ctrl_mode_mf) begin
 			ep_crc <= 1'b0;
 			ed_crc <= 1'b0;
 			ep_mfa <= 1'b0;
@@ -369,9 +374,15 @@ module e1_rx_deframer #(
 		end else begin
 			if (TS0_START)
 				out_valid <= strobe && bit_last && (
-					(fsm_state == ST_ALIGNED) || (
+					(fsm_state == ST_ALIGNED) ||
+					(
 						(fsm_state == ST_MULTIFRAME_VALIDATE) &&
 						(ts_is_ts0 && ~mfa_timeout[6] && frame_mf_first && ts0_msbs_match_mf)
+					) ||
+					(
+						~ctrl_mode_mf &&
+						(fsm_state == ST_FRAME_VALIDATE) &&
+						(ts_is_ts0 && fas_pos && data_match_fas)
 					)
 				);
 			else

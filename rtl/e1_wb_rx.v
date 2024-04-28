@@ -220,6 +220,7 @@ module e1_wb_rx #(
 		.bd_miss(bdrx_miss),
 		.lb_bit(lb_bit),
 		.lb_valid(lb_valid),
+		.ctrl_mode_mf(rx_mode[0]),
 		.status_aligned(rx_aligned),
 		.clk(clk),
 		.rst(rx_rst)

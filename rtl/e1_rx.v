@@ -45,6 +45,9 @@ module e1_rx #(
 	output wire lb_bit,
 	output wire lb_valid,
 
+	// Control
+	input  wire ctrl_mode_mf,
+
 	// Status
 	output wire status_aligned,
 
@@ -175,6 +178,7 @@ module e1_rx #(
 		.out_err_fas(df_err_fas),
 		.out_err_nfas(df_err_nfas),
 		.aligned(df_aligned),
+		.ctrl_mode_mf(ctrl_mode_mf),
 		.clk(clk),
 		.rst(rst)
 	);
