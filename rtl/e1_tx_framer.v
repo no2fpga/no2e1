@@ -64,13 +64,13 @@ module e1_tx_framer (
 
 	wire [7:0] fetch_data;
 	wire [1:0] fetch_crc_e;
-	wire fetch_valid;
 
 	wire fetch_ack;
 
 	// TS0 generation
 	reg  [7:0] shift_data_nxt;
 	wire [7:0] odd_bit0;
+	wire odd_bit0_mux;
 
 	// Shift register
 	reg  [3:0] bit_cnt;
@@ -152,9 +152,8 @@ module e1_tx_framer (
 			fetch_done <= 1'b1;
 
 	// Data output to next stage
-	assign fetch_data  = in_data;
+	assign fetch_data  = (in_rdy & fetch_done) ? in_data : 8'hff;
 	assign fetch_crc_e = in_crc_e;
-	assign fetch_valid = in_rdy & fetch_done;
 
 
 	// TS0 generation
@@ -163,20 +162,26 @@ module e1_tx_framer (
 		// from the response
 
 	assign odd_bit0 = { fetch_crc_e[1:0], 6'b110100 };
+	assign odd_bit0_mux = odd_bit0[fetch_frame[3:1]];
 
 	always @(posedge clk)
 		if (fetch_ts_is0 & ctrl_do_framing) begin
 			// TS0 with auto-framing
 			if (fetch_frame[0])
 				// Odd frame number
-				shift_data_nxt <= { odd_bit0[fetch_frame[3:1]], 1'b1, alarm, 5'b11111 };
+				shift_data_nxt <= {
+					ctrl_do_crc4 ? odd_bit0_mux : fetch_data[7],
+					1'b1,
+					alarm,
+					fetch_data[4:0]
+				};
 			else
 				// Even frame number
-				shift_data_nxt <= 8'h1b;	// CRC bits are set later
+				shift_data_nxt <= { fetch_data[7], 7'h1b };	// CRC bits are set later
 		end else begin
 			// Either auto-frame is disabled, or this is not TS0
 			// If there is no valid data available, fill with 0xff
-			shift_data_nxt <= fetch_valid ? fetch_data : 8'hff;
+			shift_data_nxt <= fetch_data;
 		end
 
 
