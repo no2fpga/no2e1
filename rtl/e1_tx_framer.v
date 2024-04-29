@@ -58,8 +58,6 @@ module e1_tx_framer (
 	reg  [4:0] fetch_ts;
 	reg  fetch_ts_is0;
 	reg  fetch_ts_is31;
-	reg  fetch_first;
-	reg  fetch_last;
 	reg  fetch_done;
 
 	wire [7:0] fetch_data;
