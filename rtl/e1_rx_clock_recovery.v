@@ -28,13 +28,6 @@ module e1_rx_clock_recovery (
 );
 
 	reg [5:0] cnt;
-	reg enabled;
-
-	always @(posedge clk)
-		if (rst)
-			enabled <= 1'b0;
-		else
-			enabled <= enabled | in_stb;
 
 	always @(posedge clk)
 	begin
@@ -45,7 +38,7 @@ module e1_rx_clock_recovery (
 				cnt <= 5'h01;
 			else if (cnt[5])
 				cnt <= 5'h0d;
-			else if (enabled)
+			else
 				cnt <= cnt - 1;
 		end
 	end
