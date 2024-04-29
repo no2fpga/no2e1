@@ -51,6 +51,12 @@ module e1_rx #(
 	// Status
 	output wire status_aligned,
 
+	// Monitor pulses
+		// [2] rx_one		Every sampled '1' bit
+		// [1] rx_sample	Every sample
+		// [0] rx_pulse		Every detected pulse
+	output wire [2:0] mon_tick,
+
 	// Common
 	input  wire clk,
 	input  wire rst
@@ -151,6 +157,9 @@ module e1_rx #(
 				.rst(rst)
 			);
 
+			// Dummy for monitor ticks
+			assign ll_flt_stb = 1'b0;
+
 		end
 	endgenerate
 
@@ -218,5 +227,12 @@ module e1_rx #(
 
 	// Status output
 	assign status_aligned = df_aligned;
+
+	// Monitoring tick
+	assign mon_tick = {
+		ll_valid & ll_bit,
+		ll_valid,
+		ll_flt_stb
+	};
 
 endmodule // e1_rx

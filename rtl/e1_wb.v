@@ -61,9 +61,8 @@ module e1_wb #(
 	output reg         wb_ack,
 
 	// External strobes
-	output reg          irq,
-	output wire [N-1:0] tick_rx,
-	output wire [N-1:0] tick_tx,
+	output reg            irq,
+	output wire [4*N-1:0] mon_tick,
 
 	// Common
 	input  wire clk,
@@ -188,7 +187,7 @@ module e1_wb #(
 					.tx_crc_e_auto(tx_crc_e_auto),
 					.tx_crc_e_ack (tx_crc_e_ack),
 					.irq          (irq_rx[i]),
-					.tick         (tick_rx[i]),
+					.mon_tick     (mon_tick[4*i+1+:3]),
 					.lb_bit       (lb_bit[i]),
 					.lb_valid     (lb_valid[i]),
 					.clk          (clk),
@@ -206,7 +205,8 @@ module e1_wb #(
 				assign tx_crc_e_auto = 2'b00;
 
 				assign irq_rx[i] = 1'b0;
-				assign tick_rx[i] = 1'b0;
+
+				assign mon_tick[4*i+1+:3] = 3'b000;
 
 			end
 
@@ -240,7 +240,7 @@ module e1_wb #(
 					.tx_crc_e_auto(tx_crc_e_auto),
 					.tx_crc_e_ack (tx_crc_e_ack),
 					.irq          (irq_tx[i]),
-					.tick         (tick_tx[i]),
+					.mon_tick     (mon_tick[4*i]),
 					.lb_bit       ({lb_bit_cross,   lb_bit[i]  }),
 					.lb_valid     ({lb_valid_cross, lb_valid[i]}),
 					.clk          (clk),
@@ -262,7 +262,7 @@ module e1_wb #(
 				assign bus_rdata_tx[i] = 16'h0000;
 				assign irq_tx[i] = 1'b0;
 
-				assign tick_tx[i] = 1'b0;
+				assign mon_tick[4*i] = 1'b0;
 
 			end
 

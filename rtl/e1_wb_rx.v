@@ -48,7 +48,7 @@ module e1_wb_rx #(
 
 	// External strobes
 	output wire irq,
-	output wire tick,
+	output wire [2:0] mon_tick,
 
 	// Loopback path
 	output wire lb_bit,
@@ -222,6 +222,7 @@ module e1_wb_rx #(
 		.lb_valid(lb_valid),
 		.ctrl_mode_mf(rx_mode[0]),
 		.status_aligned(rx_aligned),
+		.mon_tick(mon_tick),
 		.clk(clk),
 		.rst(rx_rst)
 	);
@@ -259,6 +260,5 @@ module e1_wb_rx #(
 	// ----------------
 
 	assign irq  = ~bro_empty | rx_overflow;
-	assign tick = lb_valid;		/* tick recovered from RX */
 
 endmodule // e1_wb_rx

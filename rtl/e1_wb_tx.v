@@ -46,7 +46,7 @@ module e1_wb_tx #(
 
 	// External strobes
 	output wire irq,
-	output wire tick,
+	output wire mon_tick,
 
 	// Loopback path
 	input  wire [1:0] lb_bit,
@@ -273,6 +273,6 @@ module e1_wb_tx #(
 	// ----------------
 
 	assign irq  = ~bto_empty | tx_underflow;
-	assign tick = int_tick;		/* tick used for TX */
+	assign mon_tick = int_tick; /* tick used for TX */
 
 endmodule // e1_wb_tx
