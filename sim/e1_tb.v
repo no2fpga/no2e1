@@ -56,8 +56,9 @@ module e1_tb;
 		.pad_rx_hi_n(~e1_in_ring),
 		.pad_rx_lo_p( e1_in_tip),
 		.pad_rx_lo_n(~e1_in_tip),
-		.out_bit(e1_bit),
-		.out_valid(e1_valid),
+		.lb_bit(e1_bit),
+		.lb_valid(e1_valid),
+		.ctrl_mode_mf(1'b0),
 		.clk(clk_30m72),
 		.rst(rst)
 	);
@@ -65,8 +66,13 @@ module e1_tb;
 	e1_tx tx_I (
 		.pad_tx_hi(e1_out_ring),
 		.pad_tx_lo(e1_out_tip),
-		.in_bit(e1_bit),
-		.in_valid(e1_valid),
+		.lb_bit(e1_bit),
+		.lb_valid(e1_valid),
+		.ctrl_time_src(1'b0),
+		.ctrl_do_framing(1'b0),
+		.ctrl_do_crc4(1'b0),
+		.ctrl_loopback(1'b1),
+		.alarm(1'b0),
 		.clk(clk_30m72),
 		.rst(rst)
 	);
